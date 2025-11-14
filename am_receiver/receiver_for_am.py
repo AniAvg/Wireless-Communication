@@ -3,27 +3,27 @@ import matplotlib.pyplot as plt
 import soundfile as sf
 from scipy.signal import hilbert
 
-data, sample_rate = sf.read("original_audio.mp3")
+msg_signal, sample_rate = sf.read("original_audio.mp3")
 
 # checking if the audio is mono
-if data.ndim > 1:
-    data = data[:, 0]
+if msg_signal.ndim > 1:
+    msg_signal = msg_signal[:, 0]
 
-data = data / np.max(np.abs(data))
+msg_signal = msg_signal / np.max(np.abs(msg_signal))
 # T = time step
 T = 1 / sample_rate
-freq = np.fft.fftfreq(len(data), T)
-Am = np.max(np.abs(data))
+freq = np.fft.fftfreq(len(msg_signal), T)
+Am = np.max(np.abs(msg_signal))
 
 carrier_freq = 5 * np.max(np.abs(freq))
 # carrier_freq = 10000
 Ac = 1
-time = np.arange(len(data)) / sample_rate
+time = np.arange(len(msg_signal)) / sample_rate
 
 carrier_signal = Ac * np.cos(2 * np.pi * carrier_freq * time)
 # s(t) = (Ac + k * m(t)) * cos(2 * pi * fc * t)
 mod_index = Am / Ac
-am_signal = (Ac + mod_index * data) * carrier_signal
+am_signal = (Ac + mod_index * msg_signal) * carrier_signal
 
 
 analytic_signal = hilbert(am_signal)
@@ -71,7 +71,7 @@ def plotting(t, signal, title):
 
 plt.figure(figsize = (12, 8))
 plt.subplot(3, 1, 1)
-plotting(time, data, "Message Signal")
+plotting(time, msg_signal, "Message Signal")
 plt.subplot(3, 1, 2)
 plotting(time, am_signal, "AM Signal")
 plt.subplot(3, 1, 3)
@@ -79,7 +79,7 @@ plotting(time, recovered, "Recovered Signal")
 
 plt.figure(figsize = (10, 8))
 plt.subplot(2, 1, 1)
-plotting(time[start:end], data[start:end], "Message Signal (Zoomed)")
+plotting(time[start:end], msg_signal[start:end], "Message Signal (Zoomed)")
 plt.subplot(2, 1, 2)
 plotting(time[start:end], recovered[start:end], "Recovered Signal (Zoomed)")
 
