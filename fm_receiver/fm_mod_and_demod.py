@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import soundfile as sf
 from scipy.signal import hilbert
-from scipy.signal import butter, filtfilt
 
 msg_signal, sample_rate = sf.read("original_audio.mp3")
 
