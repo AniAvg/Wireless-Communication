@@ -31,7 +31,7 @@ envelope = np.abs(analytic_signal)
 recovered = (envelope / Ac - 1) / mod_index
 recovered = np.clip(recovered, -1, 1)
 
-sf.write("recovered_audio.mp3", recovered, sample_rate)
+sf.write("recovered_am_audio.mp3", recovered, sample_rate)
 
 
 #  SNR = P_signal / P_noise
@@ -52,8 +52,7 @@ envelope = np.abs(analytic_signal)
 recovered_noisy = (envelope / Ac - 1) / mod_index
 recovered_noisy = np.clip(recovered_noisy, -1, 1)
 
-sf.write("recovered_noisy_audio.mp3", recovered_noisy, sample_rate)
-
+sf.write("recovered_noisy_am_audio.mp3", recovered_noisy, sample_rate)
 
 start_time = 0
 end_time = 0.01
