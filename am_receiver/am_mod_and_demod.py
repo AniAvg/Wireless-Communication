@@ -54,50 +54,73 @@ recovered_noisy = np.clip(recovered_noisy, -1, 1)
 
 sf.write("recovered_noisy_am_audio.mp3", recovered_noisy, sample_rate)
 
+#  Frequency Domain
+fft_values_m = np.fft.fft(msg_signal) / len(msg_signal)
+freq_m = np.fft.fftfreq(len(msg_signal), 1 / sample_rate)
+magnitude_m = np.abs(fft_values_m) * 2
+
+fft_values_r = np.fft.fft(recovered) / len(recovered)
+freq_r = np.fft.fftfreq(len(recovered), 1 / sample_rate)
+magnitude_r = np.abs(fft_values_r) * 2
+
+
+error = np.mean(np.abs(msg_signal - recovered))
+print("Mean absolute error:", error) # error = 0.006915288466805749
+
+# Plotting
+def plotting(x_axis, y_axis, title, x_axis_title, y_axis_title):
+    plt.plot(x_axis, y_axis)
+    plt.title(title)
+    plt.xlabel(x_axis_title)
+    plt.ylabel(y_axis_title)
+    plt.grid(True)
+
 start_time = 0
 end_time = 0.01
 
 start = int(start_time * sample_rate)
 end = int(end_time * sample_rate)
 
-def plotting(t, signal, title):
-    plt.plot(t, signal)
-    plt.title(title)
-    plt.xlabel("Time")
-    plt.ylabel("Amplitude")
-    plt.grid(True)
-
-
+# Msg signal, AM signal, Recovered signal
 plt.figure(figsize = (12, 8))
 plt.subplot(3, 1, 1)
-plotting(time, msg_signal, "Message Signal")
+plotting(time, msg_signal, "Message Signal", "Time", "Amplitude")
 plt.subplot(3, 1, 2)
-plotting(time, am_signal, "AM Signal")
+plotting(time, am_signal, "AM Signal", "Time", "Amplitude")
 plt.subplot(3, 1, 3)
-plotting(time, recovered, "Recovered Signal")
+plotting(time, recovered, "Recovered Signal", "Time", "Amplitude")
 
+# Msg signal, Recovered signal (zoomed)
 plt.figure(figsize = (10, 8))
 plt.subplot(2, 1, 1)
-plotting(time[start:end], msg_signal[start:end], "Message Signal (Zoomed)")
+plotting(time[start:end], msg_signal[start:end], "Message Signal (Zoomed)", "Time", "Amplitude")
 plt.subplot(2, 1, 2)
-plotting(time[start:end], recovered[start:end], "Recovered Signal (Zoomed)")
+plotting(time[start:end], recovered[start:end], "Recovered Signal (Zoomed)", "Time", "Amplitude")
 
+# Plotting frequency domain - Msg signal and Recovered signal
 plt.figure(figsize = (10, 8))
 plt.subplot(2, 1, 1)
-plotting(time, noisy_am_signal, "Noisy Signal")
+plotting(freq_m, magnitude_m, "Message Signal (freq domain)", "Frequency", "Amplitude")
 plt.subplot(2, 1, 2)
-plotting(time[start:end], noisy_am_signal[start:end], "Noisy Signal (Zoomed)")
+plotting(freq_r, magnitude_r, "Recovered Signal (freq domain)", "Frequency", "Amplitude")
 
- # Recovered Signal
+# Noisy signal
+plt.figure(figsize = (10, 8))
+plt.subplot(2, 1, 1)
+plotting(time, noisy_am_signal, "Noisy Signal", "Time", "Amplitude")
+plt.subplot(2, 1, 2)
+plotting(time[start:end], noisy_am_signal[start:end], "Noisy Signal (Zoomed)", "Time", "Amplitude")
+
+# Recovered Signal with noise and without
 plt.figure(figsize = (18, 8))
 plt.subplot(2, 2, 1)
-plotting(time, recovered, "Recovered Message Signal")
+plotting(time, recovered, "Recovered Message Signal", "Time", "Amplitude")
 plt.subplot(2, 2, 2)
-plotting(time[start:end], recovered[start:end], "Recovered Message Signal (Zoomed)")
+plotting(time[start:end], recovered[start:end], "Recovered Message Signal (Zoomed)", "Time", "Amplitude")
 plt.subplot(2, 2, 3)
-plotting(time, recovered_noisy, "Recovered Noisy Signal")
+plotting(time, recovered_noisy, "Recovered Noisy Signal", "Time", "Amplitude")
 plt.subplot(2, 2, 4)
-plotting(time[start:end], recovered_noisy[start:end], "Recovered Noisy Signal (Zoomed)")
+plotting(time[start:end], recovered_noisy[start:end], "Recovered Noisy Signal (Zoomed)", "Time", "Amplitude")
 
 plt.tight_layout()
 plt.show()
