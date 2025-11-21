@@ -28,12 +28,41 @@ symbols_string = ["".join(row.astype(str)) for row in msg_matrix]
 qam_symbols = np.array([mapping[s] for s in symbols_string])
 print("QAM symbols: ", qam_symbols)
 
+
+def adding_awgn(symbols, snr_db):
+    signal_power = np.mean(np.abs(symbols ** 2))
+    snr_linear = 10 ** (snr_db / 10)
+    noise_power = signal_power / snr_linear
+    std_dev = np.sqrt(noise_power / 2)
+    noise = std_dev * (np.random.randn(len(symbols)) +
+                   1j * np.random.randn(len(symbols)))
+    noisy_symbols = symbols + noise
+    return noisy_symbols
+
+qam_noisy_symbols = adding_awgn(qam_symbols, 15)
+
+plt.figure(figsize = (12, 6))
+plt.subplot(1, 2, 1)
 plt.scatter(np.real(qam_symbols), np.imag(qam_symbols), s = 100)
-plt.axhline(0, color='gray', linewidth=0.7)
-plt.axvline(0, color='gray', linewidth=0.7)
+plt.axhline(0, color='gray', linewidth=1.2)
+plt.axvline(0, color='gray', linewidth=1.2)
+plt.xlim([-3.5, 3.5])
+plt.ylim([-3.5, 3.5])
 plt.title("16 QAM Constellation Diagram")
 plt.xlabel("In phase")
 plt.ylabel("Quadrature")
 plt.grid(True)
-plt.show()
 
+plt.subplot(1, 2, 2)
+plt.scatter(np.real(qam_noisy_symbols), np.imag(qam_noisy_symbols), s = 100)
+plt.axhline(0, color='gray', linewidth=1.2)
+plt.axvline(0, color='gray', linewidth=1.2)
+plt.xlim([-3.5, 3.5])
+plt.ylim([-3.5, 3.5])
+plt.title("16 QAM Constellation Diagram with Noise")
+plt.xlabel("In phase")
+plt.ylabel("Quadrature")
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
