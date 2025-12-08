@@ -1,19 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import string
+import random
 
-def text_to_bits(text):
-    byte_array = np.frombuffer(text.encode('utf-8'), dtype=np.uint8)
-    bits = np.unpackbits(byte_array)
-    return bits
+def generate_bits(min_len=32, max_len=1024):
+    L = np.random.randint(min_len, max_len + 1)
+    L += (-L) % 4
 
+    random_bits = np.random.randint(0, 2, size=L, dtype=np.uint8)
+    return random_bits
 
-def bits_to_text(bits):
-    bits = np.array(bits, dtype=np.uint8)
-    byte_array = np.packbits(bits)
-    try:
-        return byte_array.tobytes().decode('utf-8', errors='ignore')
-    except:
-        return ""
 
 def qam16_mod(bits):
     bits = bits.reshape(-1, 4)
@@ -62,11 +58,6 @@ def add_awgn(signal, snr_db):
     return signal + noise
 
 def simulate():
-    text = "Quadrature Amplitude Modulation"
-    bits = text_to_bits(text)
-
-    pad = (4 - (len(bits) % 4)) % 4
-    bits = np.concatenate([bits, np.zeros(pad, dtype=np.uint8)])
 
     snr_list = [0, 5, 10, 15, 20, 25]
     ber_list = []
@@ -74,8 +65,8 @@ def simulate():
     for snr in snr_list:
         errors = 0
         total = 0
-
         for _ in range(1000):
+            bits = generate_bits()
             tx = qam16_mod(bits)
             rx = add_awgn(tx, snr)
             decoded_bits = qam16_demod(rx)
