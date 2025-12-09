@@ -1,12 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.special import erfc
 
-def generate_bits(n, min_len=32, max_len=1024):
+def generate_bits(n, min_len=100, max_len=2000):
     L = np.random.randint(min_len, max_len + 1)
     L += (-L) % n
 
     random_bits = np.random.randint(0, 2, size=L, dtype=np.uint8)
     return random_bits
+
+# Theoretical BER
+def ber_qam_theoretical(snr_db, M):
+    k = np.log2(M)
+    snr_lin = 10**(snr_db / 10)
+    return (4/k) * (1 - 1/np.sqrt(M)) * 0.5 * erfc(np.sqrt((3 * k / (2*(M-1))) * snr_lin))
 
 # 4 QAM
 def qam4_mod(bits):
@@ -84,7 +91,7 @@ def simulate_4qam():
     for snr in snr_list:
         errors = 0
         total = 0
-        for _ in range(1000):
+        for _ in range(10000):
             bits = generate_bits(2)
             tx = qam4_mod(bits)
             rx = add_awgn(tx, snr)
@@ -106,7 +113,7 @@ def simulate_16qam():
     for snr in snr_list:
         errors = 0
         total = 0
-        for _ in range(1000):
+        for _ in range(10000):
             bits = generate_bits(4)
             tx = qam16_mod(bits)
             rx = add_awgn(tx, snr)
@@ -123,11 +130,28 @@ def simulate_16qam():
 snrs_4qam, bers_4qam = simulate_4qam()
 snrs_16qam, bers_16qam = simulate_16qam()
 
-plt.figure()
-plt.semilogy(snrs_4qam, bers_4qam, marker='o')
-plt.semilogy(snrs_16qam, bers_16qam, marker='o')
+snr_range = np.arange(0, 36, 1)
+ber_4qam_th = ber_qam_theoretical(snr_range, 4)
+ber_16qam_th = ber_qam_theoretical(snr_range, 16)
+
+plt.figure(figsize = (12, 5))
+plt.subplot(1, 2, 1)
+plt.semilogy(snrs_4qam, bers_4qam, marker='o', label="4-QAM")
+plt.semilogy(snrs_16qam, bers_16qam, marker='o', label="16-QAM")
 plt.xlabel("SNR (dB)")
 plt.ylabel("BER")
 plt.title("BER vs SNR (4-QAM and 16-QAM)")
+plt.legend()
 plt.grid(True)
+
+plt.subplot(1, 2, 2)
+plt.semilogy(snr_range, ber_4qam_th, 'b-', label="4-QAM Theo")
+plt.semilogy(snr_range, ber_16qam_th, 'r-', label="16-QAM Theo")
+plt.xlabel("SNR (dB)")
+plt.ylabel("BER")
+plt.title("BER vs SNR (4-QAM and 16-QAM)")
+plt.legend()
+plt.grid(True)
+
+plt.tight_layout()
 plt.show()
