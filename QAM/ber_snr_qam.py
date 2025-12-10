@@ -28,7 +28,6 @@ def qam4_mod(bits):
 
 def qam4_demod(symbols):
     all_bits = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-
     const_points = np.array([
         -1-1j, -1+1j, 1-1j, 1+1j
     ])
@@ -61,7 +60,6 @@ def qam16_demod(symbols):
         [1,0,0,0], [1,0,0,1], [1,0,1,0], [1,0,1,1],
         [1,1,0,0], [1,1,0,1], [1,1,1,0], [1,1,1,1]
     ])
-
     const_points = np.array([
         -3-3j, -3-1j, -3+3j, -3+1j,
         -1-3j, -1-1j, -1+3j, -1+1j,
@@ -80,55 +78,55 @@ def add_awgn(signal, snr_db):
     snr_lin = 10**(snr_db / 10)
     power = np.mean(np.abs(signal)**2)
     noise_power = power / snr_lin
-    noise = np.sqrt(noise_power/2) * (
-        np.random.randn(*signal.shape) + 1j*np.random.randn(*signal.shape)
-    )
+    noise = (np.sqrt(noise_power/2) *
+            (np.random.randn(*signal.shape) + 1j*np.random.randn(*signal.shape)))
     return signal + noise
 
-def simulate_4qam():
-    snr_list = [0, 5, 10, 15, 20, 25, 30, 35]
+def energy_info(symbols, M):
+    k = np.log2(M)
+    Es = np.mean(np.abs(symbols)**2)
+    Eb = Es / k
+    return Es, Eb, k
+
+def simulate(mod, demod, bits_per_symbol, M):
+    snr_list = [0,5,10,15,20,25,30,35]
     ber_list = []
+    Es_list = []
+    Eb_list = []
     for snr in snr_list:
         errors = 0
         total = 0
-        for _ in range(10000):
-            bits = generate_bits(2)
-            tx = qam4_mod(bits)
+        Es_sum = 0
+        Eb_sum = 0
+        count = 0
+        for _ in range(1000):
+            bits = generate_bits(bits_per_symbol)
+            tx = mod(bits)
+            Es, Eb, k = energy_info(tx, M)
+            Es_sum += Es
+            Eb_sum += Eb
+            count += 1
+
             rx = add_awgn(tx, snr)
-            decoded_bits = qam4_demod(rx)
+            decoded_bits = demod(rx)
 
             errors += np.sum(bits != decoded_bits)
             total += len(bits)
 
-        ber = errors / total
+        ber = errors/total
+
         ber_list.append(ber)
-        print(f"SNR_4={snr} dB → BER_4={ber:.6f}")
-    return snr_list, ber_list
+        Es_avg = Es_sum / count
+        Eb_avg = Eb_sum / count
+        Es_list.append(Es_avg)
+        Eb_list.append(Eb_avg)
+        print(f"SNR={snr} dB → BER={ber:.6f}, Es_avg={Es_avg:.3f}, Eb_avg={Eb_avg:.3f}")
+
+    return snr_list, ber_list, Es_list, Eb_list
 
 
-def simulate_16qam():
-
-    snr_list = [0, 5, 10, 15, 20, 25, 30, 35]
-    ber_list = []
-    for snr in snr_list:
-        errors = 0
-        total = 0
-        for _ in range(10000):
-            bits = generate_bits(4)
-            tx = qam16_mod(bits)
-            rx = add_awgn(tx, snr)
-            decoded_bits = qam16_demod(rx)
-
-            errors += np.sum(bits != decoded_bits)
-            total += len(bits)
-
-        ber = errors / total
-        ber_list.append(ber)
-        print(f"SNR_16={snr} dB → BER_16={ber:.6f}")
-    return snr_list, ber_list
-
-snrs_4qam, bers_4qam = simulate_4qam()
-snrs_16qam, bers_16qam = simulate_16qam()
+snrs_4qam, bers_4qam, Es4, Eb4 = simulate(qam4_mod, qam4_demod, 2, 4)
+snrs_16qam, bers_16qam, Es16, Eb16 = simulate(qam16_mod, qam16_demod, 4, 16)
 
 snr_range = np.arange(0, 36, 1)
 ber_4qam_th = ber_qam_theoretical(snr_range, 4)
@@ -152,6 +150,14 @@ plt.ylabel("BER")
 plt.title("BER vs SNR (4-QAM and 16-QAM)")
 plt.legend()
 plt.grid(True)
+
+plt.figure(figsize=(7,4))
+plt.bar(['4-QAM Es','4-QAM Eb','16-QAM Es','16-QAM Eb'],
+        [np.mean(Es4), np.mean(Eb4), np.mean(Es16), np.mean(Eb16)],
+        color=['blue','skyblue','red','salmon'])
+plt.title("Symbol and Bit Energy")
+plt.ylabel("Energy")
+plt.grid(True, axis='y', ls='--')
 
 plt.tight_layout()
 plt.show()
