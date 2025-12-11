@@ -32,13 +32,14 @@ def add_awgn(signal, snr_db):
     return signal + noise
 
 N = 64
-cp_len = N // 8
+cp_len = N // 4
 snr_db = 20
 
 bits_number = 10000
 bits = np.random.randint(0, 2, size=bits_number)
 if len(bits) % 2 != 0:
     bits = np.append(bits, 0)
+print("Bits: ", bits)
 
 qam_symbols = qam4_mod(bits)
 
@@ -51,5 +52,21 @@ if pad_len > 0:
 ofdm_blocks = symbols.reshape(num_symbols, N)
 
 time_domain = np.fft.ifft(ofdm_blocks, n=N, axis=1)
+
+tx_with_cp = np.concatenate([time_domain[:, -cp_len:], time_domain], axis=1)
+tx_signal = tx_with_cp.reshape(-1)
+
+rx_signal = add_awgn(tx_signal, snr_db)
+
+rx_with_cp = rx_signal.reshape(num_symbols, N + cp_len)
+rx = rx_with_cp[:, cp_len:]
+rx_freq = np.fft.fft(rx, n=N, axis=1)
+
+rx_symbols = rx_freq.reshape(-1)[:len(symbols) - pad_len]
+rx_bits = qam4_demod(rx_symbols)
+
+tx_bits = bits[:len(rx_bits)]
+ber = np.mean(tx_bits != rx_bits)
+print(f"BER (SNR={snr_db}): {ber:.5e})")
 
 
