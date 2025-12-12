@@ -33,13 +33,12 @@ def add_awgn(signal, snr_db):
 
 N = 64
 cp_len = N // 4
-snr_db = 5
+snr_db = 1
 
 bits_number = 10000
 bits = np.random.randint(0, 2, size=bits_number)
 if len(bits) % 2 != 0:
     bits = np.append(bits, 0)
-print("Bits: ", bits)
 
 qam_symbols = qam4_mod(bits)
 
@@ -71,36 +70,36 @@ tx_bits = bits[:len(rx_bits)]
 ber = np.mean(tx_bits != rx_bits)
 print(f"BER (SNR={snr_db}): {ber:.5e})")
 
+error = tx_bits - rx_bits
+print("Error: ", error)
 
 plt.figure(figsize=(10,4))
-plt.plot(tx_signal[:4*N], label="Tx")
-plt.plot(rx_signal[:4*N], label="Rx")
+plt.plot(np.abs(tx_signal[:4*N]), label="Tx")
+plt.plot(np.abs(rx_signal[:4*N]), label="Rx")
 plt.title("Time-Domain OFDM Tx and Rx Signals")
 plt.xlabel("Sample Index")
 plt.ylabel("Amplitude")
 plt.legend()
 plt.grid(True)
 
-tx_const = ofdm_blocks.flatten()[:2000]  # show a subset for clarity
+tx_const = ofdm_blocks.flatten()[:2000]
+rx_const = rx_freq.flatten()[:2000]
 
-plt.figure(figsize=(5,5))
-plt.scatter(np.real(tx_const), np.imag(tx_const), s=10)
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+plt.scatter(np.real(tx_const), np.imag(tx_const), s=50)
 plt.title("Constellation Before Channel")
 plt.xlabel("Real")
 plt.ylabel("Imag")
 plt.grid(True)
 plt.axis('equal')
 
-
-rx_const = rx_freq.flatten()[:2000]
-
-plt.figure(figsize=(5,5))
-plt.scatter(np.real(rx_const), np.imag(rx_const), s=10)
+plt.subplot(1, 2, 2)
+plt.scatter(np.real(rx_const), np.imag(rx_const), s=50, alpha=0.5)
 plt.title("Constellation After Channel + Noise")
 plt.xlabel("Real")
 plt.ylabel("Imag")
 plt.grid(True)
 plt.axis('equal')
-plt.show()
 
 plt.show()
