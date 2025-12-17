@@ -7,11 +7,10 @@ def generate_bits(n, min_len=100, max_len=2000):
     L += (-L) % n
     return np.random.randint(0, 2, size=L, dtype=np.uint8)
 
-# Theoretical BER
 def ber_qam_theoretical(snr_db, M):
     k = np.log2(M)
     snr_lin = 10**(snr_db / 10)
-    return (4/k) * (1 - 1/np.sqrt(M)) * 0.5 * erfc(np.sqrt((3 * k / (2*(M-1))) * snr_lin))
+    return 2 * (1 - 1/np.sqrt(M)) * 0.5 * erfc(np.sqrt((3 * snr_lin) / (2*(M-1))))
 
 # 4 QAM
 def qam4_mod(bits):
@@ -89,15 +88,10 @@ def add_awgn(signal, snr_db):
             (np.random.randn(*signal.shape) + 1j * np.random.randn(*signal.shape)))
     return signal + noise
 
-# def energy_info(symbols, M):
-#     k = np.log2(M)
-#     Es = np.mean(np.abs(symbols)**2)
-#     Eb = Es / k
-#     return Es, Eb, k
-
 def simulate(mod, demod, bits_per_symbol, M):
     snr_list = np.arange(0, 36, 5)  # 0 to 35 dB
     ber_list = []
+    all_symbols = []
 
     for snr in snr_list:
         errors = 0
@@ -108,6 +102,9 @@ def simulate(mod, demod, bits_per_symbol, M):
             rx = add_awgn(tx, snr)
             rx_bits = demod(rx)
 
+            if snr == snr_list[0]:
+                all_symbols.extend(tx)
+
             errors += np.sum(bits != rx_bits)
             total_bits += len(bits)
 
@@ -115,13 +112,36 @@ def simulate(mod, demod, bits_per_symbol, M):
         ber_list.append(ber)
         print(f"{M}-QAM  SNR={snr:2d} dB → BER={ber:.2e}")
 
-    return snr_list, ber_list
+    return snr_list, ber_list, np.array(all_symbols)
 
 
 print("4-QAM Simulation")
-snrs_4qam, bers_4qam = simulate(qam4_mod, qam4_demod, 2, 4)
+snrs_4qam, bers_4qam, symbols_4qam = simulate(qam4_mod, qam4_demod, 2, 4)
 print("\n16-QAM Simulation")
-snrs_16qam, bers_16qam = simulate(qam16_mod, qam16_demod, 4, 16)
+snrs_16qam, bers_16qam, symbols_16qam = simulate(qam16_mod, qam16_demod, 4, 16)
+
+# Calculate average symbol and bit energies from actual simulation symbols
+print("\n")
+print("Energy Calculations (from simulation data)")
+
+# 4-QAM energies
+Es_4qam = np.mean(np.abs(symbols_4qam)**2)
+Eb_4qam = Es_4qam / 2
+
+print(f"4-QAM:")
+print(f"  Average Symbol Energy (Es) = {Es_4qam:.6f}")
+print(f"  Average Bit Energy (Eb) = {Eb_4qam:.6f}")
+print(f"  Bits per symbol (k) = 2")
+print(f"  Number of symbols analyzed = {len(symbols_4qam)}")
+
+# 16-QAM energies
+Es_16qam = np.mean(np.abs(symbols_16qam)**2)
+Eb_16qam = Es_16qam / 4
+
+print(f"\n16-QAM:")
+print(f"  Average Symbol Energy (Es) = {Es_16qam:.6f}")
+print(f"  Average Bit Energy (Eb) = {Eb_16qam:.6f}")
+print(f"  Bits per symbol (k) = 4")
 
 snr_fine = np.linspace(0, 35, 200)
 ber_4qam_th = ber_qam_theoretical(snr_fine, 4)
@@ -139,13 +159,22 @@ plt.legend()
 plt.grid(True, which="both", ls="--")
 plt.ylim(1e-7, 1)
 
-# Trueplt.figure(figsize=(7,4))
-# plt.bar(['4-QAM Es','4-QAM Eb','16-QAM Es','16-QAM Eb'],
-#         [np.mean(Es4), np.mean(Eb4), np.mean(Es16), np.mean(Eb16)],
-#         color=['blue','skyblue','red','salmon'])
-# plt.title("Symbol and Bit Energy")
-# plt.ylabel("Energy")
-# plt.grid(True, axis='y', ls='--')
+# Energy comparison bar chart
+plt.figure(figsize=(8, 5))
+energies = [Es_4qam, Eb_4qam, Es_16qam, Eb_16qam]
+labels = ['4-QAM Es', '4-QAM Eb', '16-QAM Es', '16-QAM Eb']
+colors = ['blue', 'skyblue', 'red', 'salmon']
+bars = plt.bar(labels, energies, color=colors, edgecolor='black', linewidth=1.5)
 
+for bar, energy in zip(bars, energies):
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2., height,
+             f'{energy:.4f}',
+             ha='center', va='bottom', fontsize=10)
+
+plt.title("Symbol Energy (Es) and Bit Energy (Eb) Comparison", fontsize=14, fontweight='bold')
+plt.ylabel("Energy", fontsize=12)
+plt.grid(True, axis='y', ls='--', alpha=0.7)
 plt.tight_layout()
+
 plt.show()
