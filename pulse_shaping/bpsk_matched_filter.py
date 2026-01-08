@@ -45,4 +45,31 @@ detected = np.sign(samples)
 print("Symbols:  ", symbols)
 print("Detected: ", detected)
 
+plt.figure(figsize = (10, 4))
+plt.plot(time, rc_filter)
+plt.title("RC Pulse")
+plt.xlabel("Time")
+plt.ylabel("Amplitude")
+plt.grid(True)
 
+tx_time = np.arange(len(tx)) / sps
+
+plt.figure(figsize = (10, 4))
+plt.plot(tx_time, tx)
+plt.title("Transmit Signal")
+plt.xlabel("Time")
+plt.ylabel("Amplitude")
+plt.grid(True)
+
+y_time = np.arange(len(y)) / sps
+
+plt.figure(figsize = (10, 4))
+plt.plot(y_time, y)
+plt.stem(sample_indices / sps, samples, linefmt='r-', markerfmt='ro', basefmt=' ', label="Samples")
+plt.title("Matched filter Output and Samples")
+plt.xlabel("Time")
+plt.ylabel("Amplitude")
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
