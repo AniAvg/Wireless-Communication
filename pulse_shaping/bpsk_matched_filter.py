@@ -1,30 +1,30 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-num_symbols = 10
+num_bits = 10
 sps = 8
 beta = 0.35
 span = 6
+Ts = 1
 
-bits = np.random.randint(0, 2, num_symbols)
+bits = np.random.randint(0, 2, num_bits)
 symbols = 2 * bits - 1
 
 time = np.arange(-span/2, span/2 + 1/sps, 1/sps)
-Ts = 1
 
 unsampled = np.zeros(len(symbols) * sps)
 unsampled[::sps] = symbols
 
-def raised_cosine(t, Ts, beta):
-    rc = np.zeros_like(t)
-    for i in range(len(t)):
-        if abs(1 - (2 * beta * t[i] / Ts) ** 2) < 1e-6:
-            rc[i] = np.pi / 4 * np.sinc(1 / (2 * beta))
-        else:
-            rc[i] = np.sinc(t[i] / Ts) * \
-                    np.cos(np.pi * beta * t[i] / Ts) / \
-                    (1 - (2 * beta * t[i] / Ts) ** 2)
-    return rc
+# def raised_cosine(t, Ts, beta):
+#     rc = np.zeros_like(t)
+#     for i in range(len(t)):
+#         if abs(1 - (2 * beta * t[i] / Ts) ** 2) < 1e-6:
+#             rc[i] = np.pi / 4 * np.sinc(1 / (2 * beta))
+#         else:
+#             rc[i] = np.sinc(t[i] / Ts) * \
+#                     np.cos(np.pi * beta * t[i] / Ts) / \
+#                     (1 - (2 * beta * t[i] / Ts) ** 2)
+#     return rc
 
 def root_raised_cosine(t, Ts, beta):
     rrc = np.zeros_like(t)
@@ -78,6 +78,23 @@ print("Symbols:  ", symbols)
 print("Samples:  ", samples)
 print("Detected: ", detected)
 
+
+def plot_eye(signal, sps, num_symbols=100, offset=0, title="Eye Diagram"):
+    eye_len = 2 * sps
+    plt.figure(figsize = (8, 4))
+
+    for i in range(num_symbols):
+        start = i * sps + offset
+        if start + eye_len < len(signal):
+            segment = signal[start:start + eye_len]
+            plt.plot(segment, color = 'blue', alpha = 0.2)
+
+    plt.title(title)
+    plt.xlabel("Samples")
+    plt.ylabel("Amplitude")
+    plt.grid(True)
+
+
 plt.figure(figsize = (10, 4))
 plt.plot(time, rrc_filter)
 plt.title("RRC Pulse")
@@ -114,6 +131,9 @@ plt.xlabel("Time")
 plt.ylabel("Amplitude")
 plt.grid(True)
 
+plot_eye(y, sps, num_symbols=50, offset=delay, title="Eye Diagram (Matched Filter Output)")
+plot_eye(tx, sps, num_symbols=50, title="Eye Diagram (Transmit Signal)")
+plot_eye(tx_with_noise, sps, num_symbols=50, title="Eye Diagram (Transmit Signal with Noise)")
 
 plt.tight_layout()
 plt.show()
